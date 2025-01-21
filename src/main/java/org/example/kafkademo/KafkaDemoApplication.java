@@ -17,7 +17,12 @@ import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.support.converter.JsonMessageConverter;
 import org.springframework.kafka.support.converter.RecordMessageConverter;
+import org.springframework.kafka.support.mapping.DefaultJackson2JavaTypeMapper;
+import org.springframework.kafka.support.mapping.Jackson2JavaTypeMapper;
 import org.springframework.util.backoff.FixedBackOff;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @SpringBootApplication
 public class KafkaDemoApplication {
@@ -38,31 +43,26 @@ public class KafkaDemoApplication {
 
     @Bean
     public RecordMessageConverter converter() {
-        return new JsonMessageConverter();
+        JsonMessageConverter converter = new JsonMessageConverter();
+        DefaultJackson2JavaTypeMapper mapper = new DefaultJackson2JavaTypeMapper();
+        mapper.setTypePrecedence(Jackson2JavaTypeMapper.TypePrecedence.TYPE_ID);
+        mapper.addTrustedPackages("org.example.kafkademo");
+        Map<String,Class<?>> mappings = new HashMap<>();
+        mappings.put("foo", Foo2.class);
+        mappings.put("bar", Bar2.class);
+        mapper.setIdClassMapping(mappings);
+        converter.setTypeMapper(mapper);
+         return converter;
     }
 
-    @KafkaListener(id = "fooGroup", topics = "topic1")
-    public void listen(Foo2 foo) {
-        log.info("Received: {}", foo);
-        if (foo.getFoo().startsWith("fail")) {
-            throw new RuntimeException("failed");
-        }
-        this.taskExecutor.execute(() -> System.out.println("Hit enter to terminate"));
-    }
-
-    @KafkaListener(id="dltGroup",topics = "topic1-dlt")
-    public void dltListen(byte[] in){
-        log.info("Received from DLT : {}", new String(in));
-        this.taskExecutor.execute(() -> System.out.println("Hit enter to terminate"));
-    }
 
     @Bean
-    public NewTopic topic(){
-        return new NewTopic("topic1",1,(short) 1);
+    public NewTopic foos(){
+        return new NewTopic("foos",1,(short) 1);
     }
     @Bean
-    public NewTopic dlt(){
-        return new NewTopic("topic1-dlt",1,(short) 1);
+    public NewTopic bars(){
+        return new NewTopic("bars",1,(short) 1);
     }
     @Bean
     @Profile("default")
