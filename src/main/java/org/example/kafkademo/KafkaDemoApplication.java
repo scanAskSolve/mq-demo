@@ -20,19 +20,21 @@ public class KafkaDemoApplication {
         SpringApplication.run(KafkaDemoApplication.class, args);
     }
 
-    @RetryableTopic(attempts = "5",backoff = @Backoff(delay = 2000,maxDelay = 10_000,multiplier = 2))
+    @RetryableTopic(attempts = "5", backoff = @Backoff(delay = 2_000, maxDelay = 10_000, multiplier = 2))
     @KafkaListener(id = "fooGroup", topics = "topic4")
     public void listen(String in, @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
                        @Header(KafkaHeaders.OFFSET) long offset) {
-        this.log.info("Received in:{}, topic:{}, offset:{}", in, topic, offset);
-        if(in.startsWith("fail")){
-            throw new RuntimeException();
+
+        this.log.info("Received: {} from {} @ {}", in, topic, offset);
+        if (in.startsWith("fail")) {
+            throw new RuntimeException("failed");
         }
     }
 
-
     @DltHandler
-    public void listenDlt(String in,@Header(KafkaHeaders.RECEIVED_TOPIC)String topic,@Header(KafkaHeaders.OFFSET)long offset){
-        this.log.info("Received dlt in:{},topic:{},offset:{}",in,topic,offset);
+    public void listenDlt(String in, @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
+                          @Header(KafkaHeaders.OFFSET) long offset) {
+
+        this.log.info("DLT Received: {} from {} @ {}", in, topic, offset);
     }
 }
