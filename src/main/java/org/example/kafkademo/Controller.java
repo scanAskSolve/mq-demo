@@ -13,8 +13,8 @@ public class Controller {
     @Autowired
     private KafkaTemplate<Object,Object> kafkaTemplate;
 
-    @PostMapping(path="/send/foo/{what}")
+    @PostMapping(path="/send/{what}")
     public void sendFoo(@PathVariable String what) {
-        this.kafkaTemplate.send("topic1", new Foo1(what));
+        this.kafkaTemplate.send("topic4", what);
     }
 }
